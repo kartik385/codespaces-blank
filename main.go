@@ -1,34 +1,44 @@
 package main
 
 import (
-	// "kartikb385/sample/sec"
 	"context"
 	"fmt"
+	"net/http"
+	"time"
+
+	"example.com/m/poem"
+	"github.com/go-chi/chi/v5"
 )
 
-type APiHandler struct {
-}
-
-// func (a *APiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-
-// 	w.WriteHeader(303)
-// 	w.Write([]byte("Hello world"))
-// }
-
 func main() {
-	ctx := context.Background()
-	ctx = context.WithValue(ctx, "Name", "Kartik")
-	receiver(ctx)
+	r := chi.NewRouter()
+	r.Use(middle)
+	r.Get("/", coc)
+	r.Route("/api", func(r chi.Router) {
+		r.Mount("/poem", poem.PoemRouter())
+	})
+	server := &http.Server{
+		Addr:    "127.0.0.1:8000",
+		Handler: r,
+		// Good practice: enforce timeouts for servers you create!
+		WriteTimeout: 15 * time.Second,
+		ReadTimeout:  15 * time.Second,
+	}
 
+	server.ListenAndServe()
 }
 
-func receiver(ctx context.Context) {
-	fmt.Printf("First Reciver %d", ctx.Value("Name"))
-	ctx = context.WithValue(ctx, "Name", "Varun")
-	anotherReciver(ctx)
-	fmt.Printf("Third Reciver %d", ctx.Value("Name"))
+func middle(nxt http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), "Name", "Kartik")
+		r = r.WithContext(ctx)
+		nxt.ServeHTTP(w, r)
+
+	})
 }
 
-func anotherReciver(ctx context.Context) {
-	fmt.Printf("Second Reciver %d", ctx.Value("Name"))
+func coc(w http.ResponseWriter, r *http.Request) {
+	b := r.Context().Value("Name")
+	a := fmt.Sprintf("Heelo World %d", b)
+	w.Write([]byte(a))
 }
