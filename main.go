@@ -13,6 +13,7 @@ import (
 func main() {
 	r := chi.NewRouter()
 	r.Use(middle)
+	r.Get("/", coc)
 	r.Route("/api", func(r chi.Router) {
 		r.Mount("/poem", poem.PoemRouter())
 	})
